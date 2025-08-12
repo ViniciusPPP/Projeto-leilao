@@ -1,6 +1,12 @@
 
 import java.util.ArrayList;
 import javax.swing.table.DefaultTableModel;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -136,17 +142,29 @@ public class listagemVIEW extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnVenderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVenderActionPerformed
-        String id = id_produto_venda.getText();
+        try {
+       
+        int idProduto = Integer.parseInt(id_produto_venda.getText());
+
         
         ProdutosDAO produtosdao = new ProdutosDAO();
-        
-        //produtosdao.venderProduto(Integer.parseInt(id));
+        produtosdao.venderProduto(idProduto);
+
+       
         listarProdutos();
+
+      
+        JOptionPane.showMessageDialog(this, "Produto vendido com sucesso!");
+        
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this, "Digite um ID válido!");
+    }
     }//GEN-LAST:event_btnVenderActionPerformed
 
     private void btnVendasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVendasActionPerformed
-        //vendasVIEW vendas = new vendasVIEW(); 
-        //vendas.setVisible(true);
+       java.awt.EventQueue.invokeLater(() -> {
+            new TelaVendas().setVisible(true);
+        });
     }//GEN-LAST:event_btnVendasActionPerformed
 
     private void btnVoltarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnVoltarActionPerformed
@@ -202,24 +220,32 @@ public class listagemVIEW extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private void listarProdutos(){
-        try {
-            ProdutosDAO produtosdao = new ProdutosDAO();
-            
-            DefaultTableModel model = (DefaultTableModel) listaProdutos.getModel();
-            model.setNumRows(0);
-            
-            ArrayList<ProdutosDTO> listagem = produtosdao.listarProdutos();
-            
-            for(int i = 0; i < listagem.size(); i++){
-                model.addRow(new Object[]{
-                    listagem.get(i).getId(),
-                    listagem.get(i).getNome(),
-                    listagem.get(i).getValor(),
-                    listagem.get(i).getStatus()
-                });
-            }
-        } catch (Exception e) {
+         DefaultTableModel model = (DefaultTableModel) listaProdutos.getModel();
+    model.setRowCount(0); // Limpa a tabela
+
+    try {
+        conectaDAO dao = new conectaDAO();
+        Connection conn = dao.connectDB();
+
+        String sql = "SELECT id, nome, valor, status FROM produtos";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            int id = rs.getInt("id");
+            String nome = rs.getString("nome");
+            double valor = rs.getDouble("valor");
+            String status = rs.getString("status");
+
+            model.addRow(new Object[]{id, nome, valor, status});
         }
-    
+
+        rs.close();
+        stmt.close();
+        conn.close();
+
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Erro ao listar produtos: " + e.getMessage());
+    }
     }
 }
